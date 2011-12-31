@@ -181,7 +181,6 @@ class NiceChart(inkex.Effect):
 		
 		# Check if Blur should be drawn:
 		draw_blur=self.options.blur
-		#draw_blur=False
 		
 		# Set Default Colors
 		Colors=self.options.colors
@@ -204,6 +203,9 @@ class NiceChart(inkex.Effect):
 		
 		#get rotation
 		rotate = self.options.rotate	
+
+
+
 
 		if(charttype=="bar"):
 		#########
@@ -295,7 +297,7 @@ class NiceChart(inkex.Effect):
 				if(keys_present):
 					text = inkex.etree.Element(inkex.addNS('text','svg'))
 					if(not rotate):
-						text.set("transform","matrix(0,-1,1,0,0,0)")
+						text.set("transform","matrix(0,-1,1,0,0,0)") #textrotation
 						text.set("x", "-"+str(height/2+2))
 						text.set("y", str(width/2+offset+bar_width*0.75))
 					else:
@@ -318,7 +320,7 @@ class NiceChart(inkex.Effect):
 				layer.append(rect)
 				if(keys_present):
 					layer.append(text)
-		
+		#End Bar
 		
 		
 		
@@ -396,17 +398,29 @@ class NiceChart(inkex.Effect):
 				#If text is given, draw short paths and add the text
 				if(keys_present):
 					path=inkex.etree.Element(inkex.addNS("path","svg"))
-					path.set("d","m "+str((width/2)+50*math.cos(angle/2+offset))+","+str((height/2)+50*math.sin(angle/2+offset))+" "+str(8*math.cos(angle/2+offset))+","+str(8*math.sin(angle/2+offset)))
-					path.set("style","fill:none;stroke:#000000;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1")
+					path.set("d","m "+str((width/2)+50*math.cos(angle/2+offset))\
+					+","+str((height/2)+50*math.sin(angle/2+offset))\
+					+" "+str(8*math.cos(angle/2+offset))+","+str(8*math.sin(angle/2+offset)))
+
+					path.set("style","fill:none;stroke:#000000;stroke-width:1px;"\
+							"stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1")
+
 					layer.append(path)
 					text = inkex.etree.Element(inkex.addNS('text','svg'))
 					text.set("x", str((width/2)+60*math.cos(angle/2+offset)))
 					text.set("y", str((height/2)+60*math.sin(angle/2+offset)))
 					#check if it is right or left of the Pie
 					if(math.cos(angle/2+offset)>0):
-						text.set("style","font-size:10px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-family:"+font+";-inkscape-font-specification:Bitstream Charter")
+						text.set("style","font-size:10px;font-style:normal;font-variant:normal;"\
+								"font-weight:normal;font-stretch:normal;font-family:"\
+								+font+";-inkscape-font-specification:Bitstream Charter")
+
 					else:
-						text.set("style","font-size:10px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-family:"+font+";-inkscape-font-specification:Bitstream   Charter;text-align:end;text-anchor:end")
+						text.set("style","font-size:10px;font-style:normal;font-variant:normal;"\
+								"font-weight:normal;font-stretch:normal;font-family:"\
+								+font+";-inkscape-font-specification:Bitstream Charter;"\
+								"text-align:end;text-anchor:end")
+					
 					text.text=keys[color]
 					layer.append(text)
 				
@@ -418,7 +432,11 @@ class NiceChart(inkex.Effect):
 				if(draw_blur):
 					layer.append(shadow)
 				layer.append(pieslice)
-		
+		#End Pie	
+
+
+
+	
 		elif(charttype=="stbar"):
 		#################
 		###STACKED BAR###
@@ -509,9 +527,8 @@ class NiceChart(inkex.Effect):
 				if(draw_blur):
 					layer.append(shadow)
 				layer.append(rect)
-
+		#End StackedBarChart
 
 # Create effect instance and apply it.
 effect = NiceChart()
 effect.affect()
-
