@@ -88,6 +88,9 @@ class NiceChart(inkex.Effect):
 			  type="string", dest="colors", default='default',
 			  help="color-scheme")
 		
+		self.OptionParser.add_option("", "--reverse_colors", action="store",
+			  type="inkbool", dest="reverse_colors", default='False',
+			  help="reverse color-scheme")
 		
 	 	self.OptionParser.add_option("-k", "--col_key", action="store",
 			  type="int", dest="col_key", default='0',
@@ -105,6 +108,10 @@ class NiceChart(inkex.Effect):
 	 	self.OptionParser.add_option("-W", "--bar-width", action="store",
 			type="int", dest="bar_width", default='10',
 			help="width of bars")
+		
+	 	self.OptionParser.add_option("-p", "--pie-radius", action="store",
+			type="int", dest="pie_radius", default='100',
+			help="radius of pie-charts")
 			
 	 	self.OptionParser.add_option("-H", "--bar-height", action="store",
 			type="int", dest="bar_height", default='100',
@@ -114,9 +121,12 @@ class NiceChart(inkex.Effect):
 			type="int", dest="bar_offset", default='5',
 			help="distance between bars")
 			
-	 	self.OptionParser.add_option("-o", "--stacked-bar-text-offset", action="store",
-			type="int", dest="stacked_bar_text_offset", default='10',
-			help="distance between stacked bar and descriptions")
+	 	self.OptionParser.add_option("", "--stroke-width", action="store",
+			type="int", dest="stroke_width", default='2')
+			
+	 	self.OptionParser.add_option("-o", "--text-offset", action="store",
+			type="int", dest="text_offset", default='5',
+			help="distance between bar and descriptions")
 			
 	 	self.OptionParser.add_option("-F", "--font", action="store",
 			type="string", dest="font", default='sans-serif',
@@ -195,6 +205,9 @@ class NiceChart(inkex.Effect):
 		
 		color_count=len(Colors)
 		
+		if(self.options.reverse_colors):
+			Colors.reverse()
+		
 		#Those values should be self-explaining:
 		bar_height=self.options.bar_height
 		bar_width=self.options.bar_width
@@ -210,7 +223,10 @@ class NiceChart(inkex.Effect):
 		
 		
 		#get rotation
-		rotate = self.options.rotate	
+		rotate = self.options.rotate
+		
+		pie_radius=self.options.pie_radius
+		stroke_width=self.options.stroke_width
 
 
 
@@ -231,7 +247,7 @@ class NiceChart(inkex.Effect):
 				value_max=0.0
 
 			for x in range(len(values)):
-				values[x]=(float(values[x])/value_max)*bar_height
+				values[x]=(values[x]/value_max)*bar_height
 			
 			# Get defs of Document
 			defs = self.xpathSingle('/svg:svg//svg:defs')
@@ -268,10 +284,10 @@ class NiceChart(inkex.Effect):
 					# Set shadow properties
 					if(not rotate):
 						shadow.set("width", str(bar_width))
-						shadow.set("height", str(int(value)*1))
+						shadow.set("height", str(int(value)))
 					else:
 						shadow.set("height", str(bar_width))
-						shadow.set("width", str(int(value)*1))
+						shadow.set("width", str(int(value)))
 					# Set shadow blur (connect to filter object in xml path)
 					shadow.set("style","filter:url(#filter)")
 				
@@ -289,10 +305,10 @@ class NiceChart(inkex.Effect):
 				# Set rectangle properties
 				if(not rotate):
 					rect.set("width", str(bar_width))
-					rect.set("height", str(int(value)*1))
+					rect.set("height", str(int(value)))
 				else:
 					rect.set("height", str(bar_width))
-					rect.set("width", str(int(value)*1))
+					rect.set("width", str(int(value)))
 					
 				rect.set("style","fill:"+Colors[color%color_count])
 				
@@ -365,7 +381,7 @@ class NiceChart(inkex.Effect):
 			background=inkex.etree.Element(inkex.addNS("circle","svg"))
 			background.set("cx", str(width/2))
 			background.set("cy", str(height/2))
-			background.set("r", "50")
+			background.set("r", str(pie_radius))
 			background.set("style","fill:#aaaaaa;stroke:none")
 			layer.append(background)
 			
@@ -389,8 +405,8 @@ class NiceChart(inkex.Effect):
 					shadow.set(inkex.addNS('type', 'sodipodi'), 'arc')
 					shadow.set(inkex.addNS('cx', 'sodipodi'), str(width/2))
 					shadow.set(inkex.addNS('cy', 'sodipodi'), str(height/2))
-					shadow.set(inkex.addNS('rx', 'sodipodi'), "50")
-					shadow.set(inkex.addNS('ry', 'sodipodi'), "50")
+					shadow.set(inkex.addNS('rx', 'sodipodi'), str(pie_radius))
+					shadow.set(inkex.addNS('ry', 'sodipodi'), str(pie_radius))
 					shadow.set(inkex.addNS('start', 'sodipodi'), str(offset))
 					shadow.set(inkex.addNS('end', 'sodipodi'), str(offset+angle))
 					shadow.set("style","filter:url(#filter);fill:#000000")
@@ -400,8 +416,8 @@ class NiceChart(inkex.Effect):
 				pieslice.set(inkex.addNS('type', 'sodipodi'), 'arc')
 				pieslice.set(inkex.addNS('cx', 'sodipodi'), str(width/2))
 				pieslice.set(inkex.addNS('cy', 'sodipodi'), str(height/2))
-				pieslice.set(inkex.addNS('rx', 'sodipodi'), "50")
-				pieslice.set(inkex.addNS('ry', 'sodipodi'), "50")
+				pieslice.set(inkex.addNS('rx', 'sodipodi'), str(pie_radius))
+				pieslice.set(inkex.addNS('ry', 'sodipodi'), str(pie_radius))
 				pieslice.set(inkex.addNS('start', 'sodipodi'), str(offset))
 				pieslice.set(inkex.addNS('end', 'sodipodi'), str(offset+angle))
 				pieslice.set("style","fill:"+Colors[color%color_count]+";stroke:none;fill-opacity:1")
@@ -409,29 +425,18 @@ class NiceChart(inkex.Effect):
 				#If text is given, draw short paths and add the text
 				if(keys_present):
 					path=inkex.etree.Element(inkex.addNS("path","svg"))
-					path.set("d","m "+str((width/2)+50*math.cos(angle/2+offset))\
-					+","+str((height/2)+50*math.sin(angle/2+offset))\
-					+" "+str(8*math.cos(angle/2+offset))+","+str(8*math.sin(angle/2+offset)))
-
-					path.set("style","fill:none;stroke:#000000;stroke-width:1px;"\
-							"stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1")
-
+					path.set("d","m "+str((width/2)+pie_radius*math.cos(angle/2+offset))+","+str((height/2)+pie_radius*math.sin(angle/2+offset))+" "+str((text_offset-2)*math.cos(angle/2+offset))+","+str((text_offset-2)*math.sin(angle/2+offset)))
+					path.set("style","fill:none;stroke:"+font_color+";stroke-width:"+str(stroke_width)+"px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1")
 					layer.append(path)
 					text = inkex.etree.Element(inkex.addNS('text','svg'))
-					text.set("x", str((width/2)+60*math.cos(angle/2+offset)))
-					text.set("y", str((height/2)+60*math.sin(angle/2+offset)))
+					text.set("x", str((width/2)+(pie_radius+text_offset)*math.cos(angle/2+offset)))
+					text.set("y", str((height/2)+(pie_radius+text_offset)*math.sin(angle/2+offset)+font_size/3))
+					textstyle="font-size:"+str(font_size)+"px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-family:"+font+";-inkscape-font-specification:Bitstream Charter;fill:"+font_color
 					#check if it is right or left of the Pie
 					if(math.cos(angle/2+offset)>0):
-						text.set("style","font-size:10px;font-style:normal;font-variant:normal;"\
-								"font-weight:normal;font-stretch:normal;font-family:"\
-								+font+";-inkscape-font-specification:Bitstream Charter")
-
+						text.set("style",textstyle)
 					else:
-						text.set("style","font-size:10px;font-style:normal;font-variant:normal;"\
-								"font-weight:normal;font-stretch:normal;font-family:"\
-								+font+";-inkscape-font-specification:Bitstream Charter;"\
-								"text-align:end;text-anchor:end")
-					
+						text.set("style",textstyle+";text-align:end;text-anchor:end")
 					text.text=keys[color]
 					layer.append(text)
 				
@@ -454,13 +459,10 @@ class NiceChart(inkex.Effect):
 		#################
 			# Iterate all values to draw the different slices
 			color=0
-			
-			
-			
 			# Get defs of Document
 			defs = self.xpathSingle('/svg:svg//svg:defs')
 			if defs == None:
-					defs = inkex.etree.SubElement(self.document.getroot(),inkex.addNS('defs','svg'))
+				defs = inkex.etree.SubElement(self.document.getroot(),inkex.addNS('defs','svg'))
 				
 			# Create new Filter
 			filt = inkex.etree.SubElement(defs,inkex.addNS('filter','svg'))
@@ -485,7 +487,7 @@ class NiceChart(inkex.Effect):
 			
 			# Init offset
 			offset=0
-			   
+			i=len(values)-1 #loopcounter
 			# Draw Single bars with their shadows
 			for value in values:
 				
@@ -496,11 +498,19 @@ class NiceChart(inkex.Effect):
 					# Create rectangle element
 					shadow = inkex.etree.Element(inkex.addNS("rect","svg"))
 					# Set chart position to center of document.
-					shadow.set('x', str(width / 2 + 1))
-					shadow.set('y', str(height / 2 - offset - (normedvalue)+1)) 
+					if(not rotate):
+						shadow.set('x', str(width / 2 + 1))
+						shadow.set('y', str(height / 2 - offset - (normedvalue)+1)) 
+					else:
+						shadow.set('x', str(width / 2 + 1 + offset))
+						shadow.set('y', str(height / 2 +1))
 					# Set rectangle properties
-					shadow.set("width",str(bar_width))
-					shadow.set("height", str((normedvalue)))
+					if(not rotate):
+						shadow.set("width",str(bar_width))
+						shadow.set("height", str((normedvalue)))
+					else:
+						shadow.set("width",str((normedvalue)))
+						shadow.set("height", str(bar_width))
 					# Set shadow blur (connect to filter object in xml path)
 					shadow.set("style","filter:url(#filter)")
 				
@@ -508,27 +518,47 @@ class NiceChart(inkex.Effect):
 				rect = inkex.etree.Element(inkex.addNS('rect','svg'))
 				
 				# Set chart position to center of document.
-				rect.set('x', str(width / 2 ))
-				rect.set('y', str(height / 2 - offset - (normedvalue)))
-			   
+				if( not rotate ):
+					rect.set('x', str(width / 2 ))
+					rect.set('y', str(height / 2 - offset - (normedvalue)))
+				else:
+					rect.set('x', str(width / 2 + offset ))
+					rect.set('y', str(height / 2 ))
 				# Set rectangle properties
-				rect.set("width", str(bar_width))
-				rect.set("height", str((normedvalue)))
+				if( not rotate ):
+					rect.set("width", str(bar_width))
+					rect.set("height", str((normedvalue)))
+				else:
+					rect.set("height", str(bar_width))
+					rect.set("width", str((normedvalue)))
 				rect.set("style","fill:"+Colors[color%color_count])
 				
 				#If text is given, draw short paths and add the text
 				if(keys_present):
-					path=inkex.etree.Element(inkex.addNS("path","svg"))
-					path.set("d","m "+str((width+bar_width)/2)+","+str(height / 2 - offset - (normedvalue / 2))+" "+str(bar_width/2+text_offset)+",0")
-					path.set("style","fill:none;stroke:#000000;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1")
-					layer.append(path)
-					text = inkex.etree.Element(inkex.addNS('text','svg'))
-					text.set("x", str(width/2+bar_width+text_offset+1))
-					text.set("y", str(height / 2 - offset + font_size/3 - (normedvalue / 2)))
-					text.set("style","font-size:"+str(font_size)+"px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-family:"+font+";-inkscape-font-specification:Bitstream Charter")
-					text.text=keys[color]
-					layer.append(text)
-				
+					if(not rotate):
+						path=inkex.etree.Element(inkex.addNS("path","svg"))
+						path.set("d","m "+str((width+bar_width)/2)+","+str(height / 2 - offset - (normedvalue / 2))+" "+str(bar_width/2+text_offset)+",0")
+						path.set("style","fill:none;stroke:"+font_color+";stroke-width:"+str(stroke_width)+"px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1")
+						layer.append(path)
+						text = inkex.etree.Element(inkex.addNS('text','svg'))
+						text.set("x", str(width/2+bar_width+text_offset+1))
+						text.set("y", str(height / 2 - offset + font_size/3 - (normedvalue / 2)))
+						text.set("style","font-size:"+str(font_size)+"px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-family:"+font+";-inkscape-font-specification:Bitstream Charter;fill:"+font_color)
+						text.text=keys[color]
+						layer.append(text)
+					else:
+						path=inkex.etree.Element(inkex.addNS("path","svg"))
+						path.set("d","m "+str((width)/2+offset+normedvalue/2)+","
+							+str(height / 2 + bar_width/2)
+							+" 0,"+str(bar_width/2+(font_size*i)+text_offset)) #line
+						path.set("style","fill:none;stroke:"+font_color+";stroke-width:"+str(stroke_width)+"px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1")
+						layer.append(path)
+						text = inkex.etree.Element(inkex.addNS('text','svg'))
+						text.set("x", str((width)/2+offset+normedvalue/2-font_size/3))
+						text.set("y", str((height/2)+bar_width+(font_size*(i+1))+text_offset ))
+						text.set("style","font-size:"+str(font_size)+"px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-family:"+font+";-inkscape-font-specification:Bitstream Charter;fill:"+font_color)
+						text.text=keys[color]
+						layer.append(text)
 				
 				# Increase Offset and Color
 				offset=offset+normedvalue
@@ -538,7 +568,9 @@ class NiceChart(inkex.Effect):
 				if(draw_blur):
 					layer.append(shadow)
 				layer.append(rect)
-		#End StackedBarChart
+				
+				i-=1 #loopcounter
+
 
 # Create effect instance and apply it.
 effect = NiceChart()
